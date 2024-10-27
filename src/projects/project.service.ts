@@ -5,6 +5,7 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UpdateProjectDto } from './dto/update-project-dto';
 import { PrismaService } from '../modules/prisma.service';
@@ -76,34 +77,66 @@ export class ProjectService {
       throw new InternalServerErrorException(error);
     }
   }
-
-  async assignProject(projectId: number, projectManagerId: number) {
-    this.logger.log('Assign project');
+  async assignProject(
+    projectId: number,
+    userId: number,
+    assignmentType: 'PROJECT_MANAGER' | 'ENGINEER',
+  ) {
+    if (!['PROJECT_MANAGER', 'ENGINEER'].includes(assignmentType)) {
+      throw new BadRequestException('Invalid assignment type');
+    }
+    this.logger.log(`Assign ${assignmentType?.toLowerCase()} to project`);
     try {
-      const projectManager = await this.prisma.user.findUnique({
-        where: { id: Number(projectManagerId) },
+      const user = await this.prisma.user.findUnique({
+        where: { id: Number(userId) },
       });
 
-      if (!projectManager || projectManager.role !== Role.PROJECT_MANAGER) {
-        throw new BadRequestException('Invalid project manager assignment');
+      if (!user) {
+        throw new BadRequestException('User not found');
       }
+      const expectedRole =
+        assignmentType === 'PROJECT_MANAGER'
+          ? Role.PROJECT_MANAGER
+          : Role.ENGINEER;
+      if (user.role !== expectedRole) {
+        throw new BadRequestException(
+          `Invalid assignment: User must have ${assignmentType.toLowerCase().replace('_', ' ')} role`,
+        );
+      }
+      const updateData =
+        assignmentType === 'PROJECT_MANAGER'
+          ? { projectManagerId: Number(userId) }
+          : { engineerId: Number(userId) };
+      const includeData =
+        assignmentType === 'PROJECT_MANAGER'
+          ? {
+              projectManager: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
+              },
+            }
+          : {
+              engineer: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
+              },
+            };
       const updatedProject = await this.prisma.project.update({
         where: { id: Number(projectId) },
-        data: { projectManagerId: Number(projectManagerId) },
-        include: {
-          projectManager: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
+        data: updateData,
+        include: includeData,
       });
 
       return {
-        message: 'Project manager assigned successfully',
+        message: `${assignmentType.toLowerCase().replace('_', ' ')} assigned successfully`,
         updatedProject,
       };
     } catch (error) {
@@ -113,6 +146,52 @@ export class ProjectService {
         throw new BadRequestException({ message: error.message });
       }
       throw new InternalServerErrorException(error);
+    }
+  }
+  async getAssignedProject(userId: number, projectId: number) {
+    this.logger.log('Get Assigned Project');
+    if (!userId || !projectId) {
+      throw new BadRequestException('Missing required params');
+    }
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: Number(userId) },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const project = await this.prisma.project.findUnique({
+        where: { id: Number(projectId) },
+      });
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+      if (
+        project.engineerId !== user.id &&
+        project.projectManagerId !== user.id
+      ) {
+        throw new ForbiddenException('Unauthorized attempt');
+      }
+      return project;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else if (error instanceof NotFoundException) {
+        throw error;
+      } else if (error instanceof ForbiddenException) {
+        throw error;
+      } else {
+        this.logger.log(error);
+        throw new InternalServerErrorException(
+          'Unable to get assigned project',
+        );
+      }
+    }
+  }
+  async deleteProject(projectId: number) {
+    this.logger.log('Delete project');
+    if (!projectId) {
+      throw new BadRequestException('Missing required fields');
     }
   }
 }

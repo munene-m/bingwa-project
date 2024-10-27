@@ -37,12 +37,25 @@ export class ProjectController {
     return this.projectService.updateProject(id, data);
   }
 
-  @Put('assign/:projectId/:projectManagerId')
+  @Put('assign/:projectId/:userId')
   @Roles(Role.ADMIN)
   async assignProject(
     @Param('projectId') projectId: number,
-    @Param('projectManagerId') projectManagerId: number,
+    @Param('userId') userId: number,
+    @Body() body: { assignmentType: 'PROJECT_MANAGER' | 'ENGINEER' },
   ) {
-    return this.projectService.assignProject(projectId, projectManagerId);
+    return this.projectService.assignProject(
+      projectId,
+      userId,
+      body.assignmentType,
+    );
+  }
+  @Get('project/:userId/:projectId')
+  @Roles(Role.ENGINEER, Role.PROJECT_MANAGER)
+  async getAssignedProject(
+    @Param('projectId') projectId: number,
+    @Param('userId') userId: number,
+  ) {
+    return this.projectService.getAssignedProject(userId, projectId);
   }
 }

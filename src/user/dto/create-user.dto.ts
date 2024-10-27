@@ -29,6 +29,6 @@ export class CreateUserDto {
   @IsString()
   kraPin: string;
 
-  @IsEnum(Role) // Ensure the role is one of the enum values
+  @IsEnum(Role)
   role: Role;
 }
