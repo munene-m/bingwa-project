@@ -11,6 +11,7 @@ import { PrismaService } from '../modules/prisma.service';
 import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from './dto/login-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -246,6 +247,71 @@ export class UserService {
     } catch (error) {
       this.logger.log(error);
       throw new InternalServerErrorException(error as string);
+    }
+  }
+  async updateUser(id: number, updateUserDto: UpdateUserDto) {
+    this.logger.log('Update user');
+    try {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { id: Number(id) },
+      });
+
+      if (!existingUser) {
+        throw new NotFoundException('User not found');
+      }
+      let hashedPassword: string;
+      if (updateUserDto.password) {
+        const saltRounds = 10;
+        hashedPassword = await bcrypt.hash(updateUserDto.password, saltRounds);
+      }
+
+      const updatedUser = await this.prisma.user.update({
+        where: { id: Number(id) },
+        data: {
+          firstName: updateUserDto.firstName,
+          lastName: updateUserDto.lastName,
+          email: updateUserDto.email,
+          phoneNumber: updateUserDto.phoneNumber,
+          password: hashedPassword,
+          address: updateUserDto.address,
+          kraPin: updateUserDto.kraPin,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          address: true,
+          kraPin: true,
+          role: true,
+        },
+      });
+
+      return updatedUser;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Could not update user');
+    }
+  }
+  async deleteUser(id: number) {
+    this.logger.log('Delete user');
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: Number(id) },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      await this.prisma.user.delete({ where: { id: Number(id) } });
+      return { message: 'User deleted successfully' };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Unable to delete user');
     }
   }
 }
