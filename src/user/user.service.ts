@@ -203,4 +203,49 @@ export class UserService {
       throw new InternalServerErrorException(error as string);
     }
   }
+  async getUserById(id: number) {
+    this.logger.log('Get user by ID');
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: Number(id) },
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          address: true,
+          kraPin: true,
+          role: true,
+        },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      return user;
+    } catch (error) {
+      this.logger.log(error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(error as string);
+    }
+  }
+  async getAllUsers() {
+    this.logger.log('Get all users');
+    try {
+      const users = await this.prisma.user.findMany({
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          address: true,
+          kraPin: true,
+          role: true,
+        },
+      });
+      return users;
+    } catch (error) {
+      this.logger.log(error);
+      throw new InternalServerErrorException(error as string);
+    }
+  }
 }
