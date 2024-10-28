@@ -11,6 +11,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { Role } from '@prisma/client';
 
 describe('UserService', () => {
   let service: UserService;
@@ -210,6 +211,7 @@ describe('UserService', () => {
         ...mockUserData,
         id: 1,
         password: 'hashedPassword123',
+        role: Role.ADMIN,
       };
 
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
@@ -220,6 +222,10 @@ describe('UserService', () => {
 
       expect(result).toEqual({
         token: mockToken,
+        user: {
+          role: expect.any(String),
+          username: `${mockUserData.firstName} ${mockUserData.lastName}`,
+        },
         message: 'Success. User logged in successfully.',
       });
     });
@@ -232,11 +238,11 @@ describe('UserService', () => {
       );
     });
 
-    it('should throw NotFoundException if user does not exist', async () => {
+    it('should throw BadRequestException if user does not exist', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
       await expect(service.loginUser(loginData)).rejects.toThrow(
-        NotFoundException,
+        BadRequestException,
       );
     });
 
