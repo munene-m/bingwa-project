@@ -24,7 +24,7 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Post('engineer/create')
-  @Roles(Role.ADMIN)
+  // @Roles(Role.ADMIN)
   async createUser(@Body() data: CreateUserDto) {
     return this.userService.createEngineer(data);
   }
@@ -46,7 +46,7 @@ export class UserController {
     };
   }
   @Post('project-manager/create')
-  @Roles(Role.ADMIN)
+  // @Roles(Role.ADMIN)
   async createProjectManager(@Body() data: CreateUserDto) {
     return this.userService.createProjectManager(data);
   }
