@@ -58,4 +58,9 @@ export class ProjectController {
   ) {
     return this.projectService.getAssignedProject(userId, projectId);
   }
+  @Delete(':projectId')
+  @Roles(Role.ADMIN)
+  async deleteProject(@Param('projectId') projectId: number) {
+    return this.projectService.deleteProject(projectId);
+  }
 }
