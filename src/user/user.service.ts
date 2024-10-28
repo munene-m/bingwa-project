@@ -183,18 +183,26 @@ export class UserService {
         where: { email: data.email },
       });
       if (!user) {
-        throw new NotFoundException('User not found');
+        this.logger.log('User not found');
+        throw new BadRequestException('Invalid credentials');
       }
       const isPasswordMatch = await bcrypt.compare(
         data.password,
         user.password,
       );
       if (!isPasswordMatch) {
-        throw new BadRequestException('Invalid password');
+        throw new BadRequestException('Invalid credentials');
       }
 
       const token = this.authService.generateAccessToken(user);
-      return { token, message: 'Success. User logged in successfully.' };
+      return {
+        token,
+        user: {
+          role: user.role,
+          username: `${user.firstName} ${user.lastName}`,
+        },
+        message: 'Success. User logged in successfully.',
+      };
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
