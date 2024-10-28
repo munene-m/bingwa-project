@@ -48,7 +48,30 @@ export class ProjectService {
   async getProjects() {
     this.logger.log('Get all projects');
     try {
-      const projects = await this.prisma.project.findMany();
+      const projects = await this.prisma.project.findMany({
+        include: {
+          projectManager: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phoneNumber: true,
+              role: true,
+            },
+          },
+          engineer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phoneNumber: true,
+              role: true,
+            },
+          },
+        },
+      });
       return projects;
     } catch (error) {
       throw new InternalServerErrorException('Unable to get projects');
@@ -192,6 +215,27 @@ export class ProjectService {
     this.logger.log('Delete project');
     if (!projectId) {
       throw new BadRequestException('Missing required fields');
+    }
+    try {
+      const project = await this.prisma.project.findUnique({
+        where: { id: Number(projectId) },
+      });
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+      await this.prisma.project.delete({
+        where: { id: Number(projectId) },
+      });
+      return { message: 'Project deleted successfully' };
+    } catch (error) {
+      console.log(error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      } else if (error instanceof NotFoundException) {
+        throw error;
+      } else {
+        throw new InternalServerErrorException('Unable to delete project');
+      }
     }
   }
 }
