@@ -1,15 +1,16 @@
-# Stage 1 - Build Stage
 FROM node:18-alpine AS build
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --production
+RUN npm install
 
 RUN npm install -g @nestjs/cli
 
 COPY . .
+
+RUN npx prisma generate
 
 RUN npm run build
 
@@ -26,4 +27,3 @@ ENV NODE_ENV=production
 EXPOSE 4000
 
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
-
