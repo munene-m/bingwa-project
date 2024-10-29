@@ -3,26 +3,30 @@ FROM node:18-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
+COPY prisma ./prisma/
 
-RUN npm install
+RUN npm ci
+
+RUN npx prisma generate
 
 RUN npm install -g @nestjs/cli
 
 COPY . .
 
-COPY schema/schema.prisma ./prisma/schema.prisma
-
-RUN npx prisma generate
-
 RUN npm run build
 
-FROM node:18-alpine
+FROM node:18-alpine AS production
 
 WORKDIR /app
 
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
 COPY package*.json ./
+COPY prisma ./prisma/
+
+RUN npm ci --only=production
+
+RUN npx prisma generate
+
+COPY --from=builder /app/dist ./dist
 
 ENV NODE_ENV=production
 
