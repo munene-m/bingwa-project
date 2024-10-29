@@ -1,5 +1,5 @@
 
-FROM node:20.11.1-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
@@ -12,6 +12,8 @@ COPY . .
 
 RUN npx prisma generate
 
-EXPOSE 3333
+RUN npm run build
+
+EXPOSE 4000
 
 CMD ["npm", "run", "start:migrate:prod"]
