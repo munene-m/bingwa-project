@@ -171,31 +171,42 @@ export class ProjectService {
       throw new InternalServerErrorException(error);
     }
   }
-  async getAssignedProject(userId: number, projectId: number) {
-    this.logger.log('Get Assigned Project');
-    if (!userId || !projectId) {
-      throw new BadRequestException('Missing required params');
+  async getAssignedProjects(userId: number) {
+    this.logger.log('Get Assigned Projects');
+    if (!userId) {
+      throw new BadRequestException('Missing required userId param');
     }
+
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: Number(userId) },
       });
+
       if (!user) {
         throw new NotFoundException('User not found');
       }
-      const project = await this.prisma.project.findUnique({
-        where: { id: Number(projectId) },
+
+      const projects = await this.prisma.project.findMany({
+        where: {
+          OR: [{ engineerId: user.id }, { projectManagerId: user.id }],
+        },
+        include: {
+          projectManager: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
       });
-      if (!project) {
-        throw new NotFoundException('Project not found');
+
+      if (projects.length === 0) {
+        throw new NotFoundException('No assigned projects found');
       }
-      if (
-        project.engineerId !== user.id &&
-        project.projectManagerId !== user.id
-      ) {
-        throw new ForbiddenException('Unauthorized attempt');
-      }
-      return project;
+
+      return projects;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -206,11 +217,12 @@ export class ProjectService {
       } else {
         this.logger.log(error);
         throw new InternalServerErrorException(
-          'Unable to get assigned project',
+          'Unable to get assigned projects',
         );
       }
     }
   }
+
   async deleteProject(projectId: number) {
     this.logger.log('Delete project');
     if (!projectId) {

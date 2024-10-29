@@ -50,13 +50,10 @@ export class ProjectController {
       body.assignmentType,
     );
   }
-  @Get('project/:userId/:projectId')
+  @Get('project/:userId')
   @Roles(Role.ENGINEER, Role.PROJECT_MANAGER)
-  async getAssignedProject(
-    @Param('projectId') projectId: number,
-    @Param('userId') userId: number,
-  ) {
-    return this.projectService.getAssignedProject(userId, projectId);
+  async getAssignedProject(@Param('userId') userId: number) {
+    return this.projectService.getAssignedProjects(userId);
   }
   @Delete(':projectId')
   @Roles(Role.ADMIN)
