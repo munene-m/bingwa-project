@@ -198,6 +198,7 @@ export class UserService {
       return {
         token,
         user: {
+          id: user.id,
           role: user.role,
           username: `${user.firstName} ${user.lastName}`,
         },
@@ -243,6 +244,7 @@ export class UserService {
     try {
       const users = await this.prisma.user.findMany({
         select: {
+          id: true,
           firstName: true,
           lastName: true,
           email: true,
@@ -283,6 +285,7 @@ export class UserService {
           password: hashedPassword,
           address: updateUserDto.address,
           kraPin: updateUserDto.kraPin,
+          role:updateUserDto.role
         },
         select: {
           id: true,

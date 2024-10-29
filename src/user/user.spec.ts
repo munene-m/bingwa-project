@@ -223,6 +223,7 @@ describe('UserService', () => {
       expect(result).toEqual({
         token: mockToken,
         user: {
+          id: expect.any(Number),
           role: expect.any(String),
           username: `${mockUserData.firstName} ${mockUserData.lastName}`,
         },
@@ -309,6 +310,7 @@ describe('UserService', () => {
     it('should return a list of users', async () => {
       const mockUsers = [
         {
+          id: 1,
           firstName: 'John',
           lastName: 'Doe',
           email: 'john.doe@example.com',
@@ -317,6 +319,7 @@ describe('UserService', () => {
           role: 'USER',
         },
         {
+          id: 2,
           firstName: 'Jane',
           lastName: 'Smith',
           email: 'jane.smith@example.com',
@@ -331,6 +334,7 @@ describe('UserService', () => {
       expect(result).toEqual(mockUsers);
       expect(prismaService.user.findMany).toHaveBeenCalledWith({
         select: {
+          id: true,
           firstName: true,
           lastName: true,
           email: true,
@@ -363,6 +367,7 @@ describe('UserService', () => {
         password: 'newPassword123',
         address: 'Updated Address',
         kraPin: 'A12345678',
+        role: 'ENGINEER',
       };
       const existingUser = { id: userId, role: 'User' };
       const updatedUser = { ...existingUser, ...updateUserDto };
@@ -387,6 +392,7 @@ describe('UserService', () => {
           password: 'hashedPassword123',
           address: updateUserDto.address,
           kraPin: updateUserDto.kraPin,
+          role: updateUserDto.role,
         },
         select: {
           id: true,
@@ -412,6 +418,7 @@ describe('UserService', () => {
         password: 'newPassword123',
         address: 'Updated Address',
         kraPin: 'A12345678',
+        role: 'ENGINEER',
       };
 
       prismaService.user.findUnique = jest.fn().mockResolvedValue(null);
@@ -434,6 +441,7 @@ describe('UserService', () => {
         password: 'newPassword123',
         address: 'Updated Address',
         kraPin: 'A12345678',
+        role: 'ENGINEER',
       };
 
       prismaService.user.findUnique = jest
