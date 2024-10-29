@@ -10,7 +10,7 @@ RUN npm install -g @nestjs/cli
 
 COPY . .
 
-COPY app/schema/schema.prisma ./prisma/schema.prisma
+COPY schema/schema.prisma ./prisma/schema.prisma
 
 RUN npx prisma generate
 
