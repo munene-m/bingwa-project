@@ -1,35 +1,17 @@
-FROM node:18-alpine AS build
+
+FROM node:20.11.1-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-COPY prisma ./prisma/
 
-RUN npm ci
-
-RUN npx prisma generate
-
-RUN npm install -g @nestjs/cli
+RUN npm cache clean --force
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
-RUN npm run build
-
-FROM node:18-alpine AS production
-
-WORKDIR /app
-
-COPY package*.json ./
-COPY prisma ./prisma/
-
-RUN npm ci --only=production
-
 RUN npx prisma generate
 
-COPY --from=builder /app/dist ./dist
+EXPOSE 3333
 
-ENV NODE_ENV=production
-
-EXPOSE 4000
-
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["npm", "run", "start:migrate:prod"]
