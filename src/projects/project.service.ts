@@ -110,6 +110,26 @@ export class ProjectService {
     }
     this.logger.log(`Assign ${assignmentType?.toLowerCase()} to project`);
     try {
+      const existingAssignment = await this.prisma.project.findUnique({
+        where: { id: Number(projectId) },
+        select: {
+          projectManagerId: true,
+          engineerId: true,
+        },
+      });
+
+      if (!existingAssignment) {
+        throw new BadRequestException('Project not found');
+      }
+      if (
+        (assignmentType === 'PROJECT_MANAGER' &&
+          existingAssignment.projectManagerId) ||
+        (assignmentType === 'ENGINEER' && existingAssignment.engineerId)
+      ) {
+        throw new BadRequestException(
+          `Project already assigned to a ${assignmentType.toLowerCase().replace('_', ' ')}`,
+        );
+      }
       const user = await this.prisma.user.findUnique({
         where: { id: Number(userId) },
       });
